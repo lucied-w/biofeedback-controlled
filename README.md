@@ -97,3 +97,21 @@ between control and training groups
     ##   <fct>    <chr> <chr>  <chr>   <int> <int>     <dbl> <dbl>   <dbl> <chr>       
     ## 1 control  SDNN  horror dungeon    27    27    -0.609    26 5.48e-1 ns          
     ## 2 training SDNN  horror dungeon    27    27    -4.50     26 1.24e-4 ***
+
+## Respiration analysis
+
+We also examined the difference in respiration between the control and
+training groups with a T test 
+
+
+        ##  Welch Two Sample t-test
+        ## 
+        ## data:  controlResp$contDiff and trainResp$diff
+        ## t = 5.2694, df = 45.32, p-value = 0.000003669
+        ## alternative hypothesis: true difference in means is not equal to 0
+        ## 95 percent confidence interval:
+        ##  3.288220 7.355833
+        ## sample estimates:
+        ## mean of x mean of y 
+        ## -1.507252 -6.829279    
+
