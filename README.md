@@ -69,7 +69,7 @@ between control and training groups
     ## `summarise()` has grouped output by 'group'. You can override using the
     ## `.groups` argument.
     
-![HR_ANOVA](https://github.com/lucied-w/two-arm-biofeedback/assets/145454288/6cdefedc-144e-48a9-b96a-a24d51db07ea)
+![HR_ANOVA](https://github.com/lucied-w/two-arm-biofeedback/assets/145454288/1484fc3c-21fd-4d2a-b516-dab056417a5c)
 
 
 ### Two-way repeated measures ANOVA for SDNN 
@@ -100,7 +100,9 @@ between control and training groups
     ## 1 control  SDNN  horror dungeon    27    27    -0.609    26 5.48e-1 ns          
     ## 2 training SDNN  horror dungeon    27    27    -4.50     26 1.24e-4 ***
 
-![SDNN_ANOVA](https://github.com/lucied-w/two-arm-biofeedback/assets/145454288/b91eb9c1-1eee-47a6-8f81-7d8aa0e5676b)
+![SDNN_ANOVA_1](https://github.com/lucied-w/two-arm-biofeedback/assets/145454288/d3704837-4092-4ff2-b40f-17b7d9208b5c)
+
+![SDNN_ANOVA](https://github.com/lucied-w/two-arm-biofeedback/assets/145454288/ea2c6a6c-57a3-42d0-8f04-b72bb40617ba)
 
 
 ## Respiration analysis
@@ -119,4 +121,6 @@ training groups with a T test
         ## sample estimates:
         ## mean of x mean of y 
         ## -1.507252 -6.829279    
+
+![Resp](https://github.com/lucied-w/two-arm-biofeedback/assets/145454288/019c4fc6-00de-4cf6-9526-88e93cd50023)
 
