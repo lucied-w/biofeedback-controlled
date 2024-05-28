@@ -6,15 +6,16 @@ library(rstatix)
 library(reshape2)
 library(dplyr)
 library(psych)
+library(ggpubr)
+library(ggpattern)
 
-
-training_t2 <- read.csv("/Users/luciedaniel-watanabe/Desktop/NT:PhD/TABio/TABio Analysis/data/training_t2_CLEAN.csv")
-control_t2 <- read.csv("/Users/luciedaniel-watanabe/Desktop/NT:PhD/TABio/TABio Analysis/data/control_t2_CLEAN.csv")
-control_t1<- read.csv("/Users/luciedaniel-watanabe/Desktop/NT:PhD/TABio/TABio Analysis/data/control_t1_CLEAN.csv")
-training_t1 <- read.csv("/Users/luciedaniel-watanabe/Desktop/NT:PhD/TABio/TABio Analysis/data/training_t1_CLEAN.csv")
+training_t2 <- read.csv("data/training_t2_CLEAN.csv")
+control_t2 <- read.csv("data/control_t2_CLEAN.csv")
+control_t1<- read.csv("data/control_t1_CLEAN.csv")
+training_t1 <- read.csv("data/training_t1_CLEAN.csv")
 
 #cbPalette <- c( "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-cbPalette <- c( "#D55E00", "#0072B2")
+cbPalette <- c( "#D55E0095", "#0072B295")
 
 ##checking the ids match for both groups 
 training_t1$ids == training_t2$ids
@@ -69,23 +70,23 @@ t.test(training_t2$sdnn_diff, control_t2$sdnn_diff)
 
 
 training_melt <- data.frame(ids = rep(training_t1$ids,2),
-                                   time = c(rep("t1_intruder", 27), rep("t2_stressor",27)),
-                                   HR = c(training_t1$horror_HR - training_t1$baseline_HR,
-                                          training_t2$hr_diff),
-                                   group = rep("training", 54))
+                            time = c(rep("intruder", 27), rep("stressor",27)),
+                            HR = c(training_t1$horror_HR - training_t1$baseline_HR,
+                                   training_t2$hr_diff),
+                            group = rep("training", 54))
 
 control_melt <- data.frame(ids = rep(control_t1$ids,2),
-                                  time = c(rep("t1_intruder", 27), rep("t2_stressor",27)),
-                                  HR = c(control_t1$horror_HR - control_t1$baseline_HR,
-                                         control_t2$hr_diff),
-                                  group = rep("control", 54))
+                           time = c(rep("intruder", 27), rep("stressor",27)),
+                           HR = c(control_t1$horror_HR - control_t1$baseline_HR,
+                                  control_t2$hr_diff),
+                           group = rep("control", 54))
 
 
 melt.aov <- rbind(control_melt, training_melt)
 
-rm(training_melt, control_melt)
+#rm(training_melt, control_melt)
 
-melt.aov$time <- factor(melt.aov$time, levels=c("t1_intruder", "t2_stressor"))
+melt.aov$time <- factor(melt.aov$time, levels=c("intruder", "stressor"))
 melt.aov$group <- factor(melt.aov$group)
 
 
@@ -94,8 +95,8 @@ melt.aov %>%
   group_by(time, group) %>%
   shapiro_test(HR)
 
-ggqqplot(melt.aov, "HR", ggtheme = theme_bw()) +
-  facet_grid(time ~ group)
+#ggqqplot(melt.aov, "HR", ggtheme = theme_bw()) +
+#  facet_grid(time ~ group)
 
 #test homogeneity of variance
 melt.aov %>%
@@ -131,18 +132,47 @@ melt.aov %>%
   summarise(hr_mean = mean(HR)) -> melt.aov2
 
 
-melt.aov2 %>% 
-  ggplot() +
+melt.aov %>% 
+  group_by(group, time) %>% 
+  summarise(sd = sd(HR)) -> melt.aov3
+
+melt.aov2$sd = melt.aov3$sd
+melt.aov2$sd = melt.aov2$sd / sqrt(27)
+
+rm(melt.aov3)
+
+
+hr_aov_plot<- ggplot(data = melt.aov2) +
   aes(x = time, y = hr_mean, color = group) +
-  geom_line(aes(group = group)) +
+  geom_line(aes(group = group), linewidth = 1.2) +
   scale_color_manual(values=cbPalette)+
-  theme_classic()+
   labs(title = "",
        x = "Scenario",
        y = "HR ",
        fill = "group")+
-  geom_point()
+  #ggtitle("CTQ Score")   +
+  geom_point()+
+  ggtitle("HR in Intruder and Stressor")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(margin=margin(0,0,13,0))) +
+  theme(plot.title=element_text(face="bold")) +
+  theme(plot.title=element_text(size=13)) +
+  theme(axis.text = element_text(colour = "#00000095")) +
+  theme(axis.title.x = element_text(face="bold")) +
+  theme(axis.title.y = element_text(face="bold")) +
+  theme(axis.title.x = element_text(size = 12)) +
+  theme(axis.title.y = element_text(size = 12)) +
+  theme(axis.text=element_text(size=11))+
+  theme(axis.title.x = element_text(margin=margin(13,0,0,0))) +
+  theme(axis.title.y = element_text(margin=margin(0,13,0,0))) +
+  theme(legend.text = element_text(size=12))+
+  theme(legend.key.size = unit(1, 'cm'))+
+  geom_errorbar(aes(ymin = hr_mean-sd, ymax= hr_mean+sd),width=.2,
+                position=position_dodge(0.05)) +
+  scale_y_continuous(n.breaks=5) 
 
+hr_aov_plot  + guides(colour=FALSE)
 
 
 rm(melt.aov, melt.aov2, model.aov, res.aov, one.way)
@@ -152,33 +182,33 @@ rm(melt.aov, melt.aov2, model.aov, res.aov, one.way)
 ##################################################
 
 training_sdnn_melt <- data.frame(ids = rep(training_t1$ids,2),
-                                   time = c(rep("t1_intruder", 27), rep("t2_stressor",27)),
-                                   SDNN = c(training_t1$horror_sdnn - training_t1$baseline_sdnn,
-                                            training_t2$sdnn_diff),
-                                   group = rep("training", 54))
+                                 time = c(rep("intruder", 27), rep("stressor",27)),
+                                 SDNN = c(training_t1$horror_sdnn - training_t1$baseline_sdnn,
+                                          training_t2$sdnn_diff),
+                                 group = rep("training", 54))
 
 control_sdnn_melt <- data.frame(ids = rep(control_t1$ids,2),
-                                  time = c(rep("t1_intruder", 27), rep("t2_stressor",27)),
-                                  SDNN = c(control_t1$horror_sdnn - control_t1$baseline_sdnn,
-                                           control_t2$sdnn_diff),
-                                  group = rep("control", 54))
+                                time = c(rep("intruder", 27), rep("stressor",27)),
+                                SDNN = c(control_t1$horror_sdnn - control_t1$baseline_sdnn,
+                                         control_t2$sdnn_diff),
+                                group = rep("control", 54))
 
 melt.aov <- rbind(control_sdnn_melt, training_sdnn_melt)
 
 rm(control_sdnn_melt, training_sdnn_melt)
 
 
-melt.aov$time <- factor(melt.aov$time, levels=c("t1_intruder", "t2_stressor"))
+melt.aov$time <- factor(melt.aov$time, levels=c("intruder", "stressor"))
 melt.aov$group <- factor(melt.aov$group)
 
 
-#test normality dATA IS NOT NORMAL
+#test normality 
 melt.aov %>%
   group_by(time, group) %>%
   shapiro_test(SDNN)
 
-ggqqplot(melt.aov, "SDNN", ggtheme = theme_bw()) +
-  facet_grid(time ~ group)
+#ggqqplot(melt.aov, "SDNN", ggtheme = theme_bw()) +
+ # facet_grid(time ~ group)
 
 #test homogeneity of variance
 melt.aov %>%
@@ -235,8 +265,22 @@ print(pwc2)
 bxp <- ggboxplot(
   melt.aov, x = "time", y = "SDNN",
   color = "group", palette= cbPalette,
-  ylab = "SDNN", xlab = "")
+  ylab = "SDNN", xlab = "Condition") +   
+  theme_minimal()+
+  theme(axis.text = element_text(colour = "#00000095")) +
+  theme(axis.title.x = element_text(face="bold")) +
+  theme(axis.title.y = element_text(face="bold")) +
+  theme(axis.title.x = element_text(size = 12)) +
+  theme(axis.title.y = element_text(size = 12)) +
+  theme(axis.text=element_text(size=11))+
+  theme(axis.title.x = element_text(margin=margin(13,0,0,0))) +
+  theme(axis.title.y = element_text(margin=margin(0,13,0,0))) +
+  theme(legend.text = element_text(size=12))+
+  theme(legend.key.size = unit(1, 'cm'))+
+  scale_y_continuous(n.breaks=5) 
+
 bxp
+
 
 
 melt.aov %>% 
@@ -244,17 +288,49 @@ melt.aov %>%
   summarise(sdnn_mean = mean(SDNN)) -> melt.aov2
 
 
-melt.aov2 %>% 
-  ggplot() +
+melt.aov %>% 
+  group_by(group, time) %>% 
+  summarise(sd = sd(SDNN)) -> melt.aov3
+
+melt.aov2$sd = melt.aov3$sd
+melt.aov2$sd = melt.aov2$sd / sqrt(27)
+
+rm(melt.aov3)
+
+
+
+sdnn_aov_plot <- ggplot(data = melt.aov2) +
   aes(x = time, y = sdnn_mean, color = group) +
-  geom_line(aes(group = group)) +
+  geom_line(aes(group = group), linewidth = 1.2) +
   scale_color_manual(values=cbPalette)+
-  theme_classic()+
   labs(title = "",
-       x = "",
-       y = "SDNN ",
+       x = "Scenario",
+       y = "cvSDNN ",
        fill = "group")+
-  geom_point()
+  geom_point() +
+  ggtitle("cvSDNN in Intruder and Stressor")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(margin=margin(0,0,13,0))) +
+  theme(plot.title=element_text(face="bold")) +
+  theme(plot.title=element_text(size=13)) +
+  theme(axis.text = element_text(colour = "#00000095")) +
+  theme(axis.title.x = element_text(face="bold")) +
+  theme(axis.title.y = element_text(face="bold")) +
+  theme(axis.title.x = element_text(size = 12)) +
+  theme(axis.title.y = element_text(size = 12)) +
+  theme(axis.text=element_text(size=11))+
+  theme(axis.title.x = element_text(margin=margin(13,0,0,0))) +
+  theme(axis.title.y = element_text(margin=margin(0,13,0,0))) +
+  theme(legend.text = element_text(size=12))+
+  theme(legend.key.size = unit(1, 'cm'))+
+  geom_errorbar(aes(ymin = sdnn_mean-sd, ymax= sdnn_mean+sd),width=.2,
+                position=position_dodge(0.05)) +
+  scale_y_continuous(n.breaks=5) 
+
+sdnn_aov_plot + theme(legend.title = element_blank())
+
+
 
 rm(melt.aov, melt.aov2, bxp, pwc, pwc2, one.way, res.aov)
 
@@ -263,8 +339,8 @@ rm(melt.aov, melt.aov2, bxp, pwc, pwc2, one.way, res.aov)
 ############## Respiration analysis ############## 
 ##################################################
 
-controlResp <- read.csv("/Users/luciedaniel-watanabe/Desktop/NT:PhD/TABio/TABio Analysis/data/controlResp.csv")
-trainResp <- read.csv("/Users/luciedaniel-watanabe/Desktop/NT:PhD/TABio/TABio Analysis/data/trainingResp.csv")
+controlResp <- read.csv("data/controlResp.csv")
+trainResp <- read.csv("data/trainingResp.csv")
 
 trainResp$diff <- trainResp$dungeonBreathTrain - trainResp$baselineBreathTrain
 controlResp$contDiff <- controlResp$dungeonBreathCont - controlResp$baselineBreathCont
@@ -309,15 +385,34 @@ diffs <- melt(diffs)
 diffs$variable <- factor(diffs$variable)
 
 
-diffs %>% 
-  ggplot() +
-  aes(x = variable, y = value, color = variable) +
-  geom_boxplot(show.legend = FALSE) +
+ 
+resp_box <- ggplot(data = diffs) +
+  aes(data = variable, y = value, color = variable) +
+  geom_boxplot(show.legend = FALSE, linewidth = 1) +
   theme_classic()+
   scale_color_manual(values=cbPalette)+
-  labs(title =,
-       x = "",
-       y = "Breaths Per Min ")
+   labs(title = "Respiration Rate Change from Baseline to Stressor",
+       x = "Group",
+       y = "Respiration Rate (breaths/min) ")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(margin=margin(0,0,13,0))) +
+  theme(plot.title=element_text(face="bold")) +
+  theme(plot.title=element_text(size=13)) +
+  theme(axis.text = element_text(colour = "#00000095")) +
+  theme(axis.title.x = element_text(face="bold")) +
+  theme(axis.title.y = element_text(face="bold")) +
+  theme(axis.title.x = element_text(size = 12)) +
+  theme(axis.title.y = element_text(size = 12)) +
+  theme(axis.text=element_text(size=11))+
+  theme(axis.title.x = element_text(margin=margin(13,0,0,0))) +
+  theme(axis.title.y = element_text(margin=margin(0,13,0,0))) +
+  theme(legend.text = element_text(size=12))+
+  theme(legend.key.size = unit(1, 'cm'))+
+  scale_y_continuous(n.breaks=5) 
+
+ggarrange( hr_aov_plot + theme(legend.title = element_blank()), sdnn_aov_plot + theme(legend.title = element_blank()),
+         resp_box, common.legend = T, labels = 'AUTO', legend = "left", ncol =3)
 
 
 ### SDNN respiratory correlation 
@@ -339,4 +434,21 @@ corr.test(resp_cor$SDNN_diff, resp_cor$resp_diff)
 ggscatter(resp_cor, x = 'SDNN_diff', y = 'resp_diff', 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "SDNN Diff", ylab = "Resp diff")
+          xlab = "cvSDNN Difference", ylab = "Resp Difference")+
+          ggtitle("Correlation between cvSDNN and Respiration Rate")+
+          theme_minimal()+
+          theme(plot.title = element_text(hjust = 0.5)) +
+          theme(plot.title = element_text(margin=margin(0,0,13,0))) +
+          theme(plot.title=element_text(face="bold")) +
+          theme(plot.title=element_text(size=13)) +
+          theme(axis.text = element_text(colour = "#00000095")) +
+          theme(axis.title.x = element_text(face="bold")) +
+          theme(axis.title.y = element_text(face="bold")) +
+          theme(axis.title.x = element_text(size = 12)) +
+          theme(axis.title.y = element_text(size = 12)) +
+          theme(axis.text=element_text(size=11))+
+          theme(axis.title.x = element_text(margin=margin(13,0,0,0))) +
+          theme(axis.title.y = element_text(margin=margin(0,13,0,0))) +
+          theme(legend.text = element_text(size=12))+
+          theme(legend.key.size = unit(1, 'cm'))+
+          scale_y_continuous(n.breaks=5)
