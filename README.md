@@ -131,3 +131,7 @@ training groups with a T test
 ![figure3](https://github.com/user-attachments/assets/2941b3ea-f223-4a78-8053-649164be13c6)
 
 
+# Uncorrected SDNN data
+
+Any of these analyses can be run using uncorrected SDNN, as seen in the supplement. The uncorrected SDNN data is available in a subfolder of the data folder, and will work in the R script provided
+
